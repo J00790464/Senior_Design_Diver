@@ -23,10 +23,11 @@ SoftwareSerial soft_serial(2,3);
 #define BATTERY_PIN A0
 //Cutoff voltage for emergency rise
 #define MOTOR_CUTOFF_VOLTAGE 6
-//Motor Fill Time in MS
+//Motor Fill Time in ms
 #define MotorFillTime 16500
-//Base class for states
+//User input sink timer in ms
 unsigned int SinkLength;
+//Base class for states
 class State
 {
   public:
@@ -167,6 +168,7 @@ void setup() {
   state_array[COLLECT_STATE] = new Collect_State;
 
   Set_State(FLOAT_STATE);
+  //Initialize digital pinouts
   pinMode(motorOne, OUTPUT);
   digitalWrite(motorOne, LOW);
   pinMode(motorTwo, OUTPUT);
