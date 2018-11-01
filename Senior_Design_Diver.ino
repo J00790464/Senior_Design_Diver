@@ -51,15 +51,7 @@ class Float_State: public State
       
       String command = Get_Bt_Command();
       Serial.println(command);
-//      Serial.println(command.toInt());
-//      if (command.toInt() != 0 && command.toInt() < 200000) {
-//        SinkLength = command.toInt();
-//        return SINK_STATE;
-//      }
-//      else {
-//        SinkLength = 2000;
-//        return SINK_STATE;
-//      } 
+ 
       if (command == "Dive" || command == "DiveDive" || command == "Dive\r\n") {
         soft_serial.println("Enter length of time to dive: ");
         String timer = Get_Bt_Command();
@@ -67,7 +59,7 @@ class Float_State: public State
           while (timer.toInt() == 0){
             timer = Get_Bt_Command();
             Serial.println(timer);
-            delay(2500);
+            delay(25);
           }
           SinkLength = timer.toInt();
           
