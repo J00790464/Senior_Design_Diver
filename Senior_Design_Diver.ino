@@ -1,7 +1,9 @@
 //Bluetooth-Serial Headers and pin definitions
 #include <SoftwareSerial.h>
 SoftwareSerial soft_serial(2,3);
+#include <Servo.h>
 #include <ctype.h>
+
 //State Machine Definitions
 #define REMAIN 255 //This is only to remain in the current state
 #define FLOAT_STATE 0
@@ -15,16 +17,25 @@ SoftwareSerial soft_serial(2,3);
 #define motorOne 4
 #define motorTwo 5
 //D4 goes to in1, D5 goes to in2, red wire goes to out1, black goes to out2
+
 //Sensor Pins
 #define MOSI 11
 #define MISO 12
 #define OC1A 9
+
 //Voltage Level Pin
 #define BATTERY_PIN A0
+
 //Cutoff voltage for emergency rise
 #define MOTOR_CUTOFF_VOLTAGE 6
+
 //Motor Fill Time in ms
 #define MotorFillTime 16500
+
+//Valve servo object and pin
+Servo valve_servo;
+#define servo_pin = 10;
+
 //User input sink timer in ms
 unsigned int SinkLength;
 
@@ -33,7 +44,25 @@ class State
 {
   public:
     virtual void Enter() = 0;
-    virtual uint8_t Execute() = 0;    
+    virtual uint8_t Execute() = 0;  
+    
+    void open_valve() 
+    {
+      for(int i = 90; i > 0; i--) 
+      {
+        valve_servo.write(i);
+        delay(15);
+      }
+    }
+    
+    void close_valve() 
+    {
+      for (int i = 0; i <= 90; i++) 
+      {
+        valve_servo.write(i);
+        delay(15);
+      }
+    }  
 };
 
 class Float_State: public State
@@ -49,24 +78,25 @@ class Float_State: public State
     {     
       String command = Get_Bt_Command();
       //Serial.println(command);
-      if (command == "Dive" || command == "DiveDive" || command == "Dive\r\n") {
-        soft_serial.println("Enter length of time to dive: ");
+      if (command == "Dive" || command == "DiveDive" || command == "Dive\r\n") 
+      {
+          soft_serial.println("Enter length of time to dive: ");
           String timer = Get_Bt_Command();
-          while (timer.toInt() == 0){
+          while (timer.toInt() == 0)
+          {
             timer = Get_Bt_Command();
           }
-          SinkLength = timer.toInt();
-          
-        return SINK_STATE;
+          SinkLength = timer.toInt();          
+          return SINK_STATE;
       }
       return REMAIN;
     }
+    
     String Get_Bt_Command()
     {
       while(soft_serial.available())
       {
         String bluetooth_command = soft_serial.readString();
-        //bluetooth_command[bluetooth_command.length() - 2] = 0;
         return bluetooth_command;
       }
       return "N/A";
@@ -78,9 +108,11 @@ class Sink_State: public State
   private:
     void Enter()
     {
-      Serial.println("Enter Sink State");    
+      Serial.println("Enter Sink State");  
+      open_valve();  
       digitalWrite(motorOne, HIGH);
       delay(MotorFillTime);
+      close_valve();
       digitalWrite(motorOne, LOW);
     }
   
@@ -124,15 +156,17 @@ class Rise_State:public State
     void Enter()
     {
       Serial.println("Enter Rise State");
+      open_valve();
       digitalWrite(motorTwo, HIGH);
       delay(MotorFillTime);
+      close_valve();
       digitalWrite(motorTwo, LOW);
     }
   
     uint8_t Execute()
     {     
       return FLOAT_STATE;
-    }
+    }    
 };
 
 State* state_array[NUMBER_OF_STATES];
@@ -159,6 +193,12 @@ void setup() {
   digitalWrite(motorTwo,LOW);
 
   battery_check_timer = millis();
+
+  //Initialize valve servo 
+  valve_servo.attach(servo_pin);
+  valve_servo.write(90);
+   
+  delay(100);
 }
 
 void loop() { 
