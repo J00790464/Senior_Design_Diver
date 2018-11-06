@@ -27,6 +27,7 @@ SoftwareSerial soft_serial(2,3);
 #define MotorFillTime 16500
 //User input sink timer in ms
 unsigned int SinkLength;
+
 //Base class for states
 class State
 {
@@ -40,34 +41,19 @@ class Float_State: public State
   private:
     void Enter()
     {
-      Serial.println("Enter Idle State");
+      Serial.println("Enter Float State");
       soft_serial.println("Type 'Dive'");
     }
   
     uint8_t Execute()
-    {
-      //Serial.println("Execute Idle State");
-      delay(2000);
-      
+    {     
       String command = Get_Bt_Command();
-      Serial.println(command);
-//      Serial.println(command.toInt());
-//      if (command.toInt() != 0 && command.toInt() < 200000) {
-//        SinkLength = command.toInt();
-//        return SINK_STATE;
-//      }
-//      else {
-//        SinkLength = 2000;
-//        return SINK_STATE;
-//      } 
+      //Serial.println(command);
       if (command == "Dive" || command == "DiveDive" || command == "Dive\r\n") {
         soft_serial.println("Enter length of time to dive: ");
-        String timer = Get_Bt_Command();
-          Serial.println(timer);
+          String timer = Get_Bt_Command();
           while (timer.toInt() == 0){
             timer = Get_Bt_Command();
-            Serial.println(timer);
-            delay(2500);
           }
           SinkLength = timer.toInt();
           
@@ -75,7 +61,7 @@ class Float_State: public State
       }
       return REMAIN;
     }
-String Get_Bt_Command()
+    String Get_Bt_Command()
     {
       while(soft_serial.available())
       {
@@ -83,7 +69,7 @@ String Get_Bt_Command()
         //bluetooth_command[bluetooth_command.length() - 2] = 0;
         return bluetooth_command;
       }
-    return "N/A";
+      return "N/A";
     }
 };
 
@@ -92,18 +78,18 @@ class Sink_State: public State
   private:
     void Enter()
     {
-      Serial.println("Enter Sink State");
+      Serial.println("Enter Sink State");    
+      digitalWrite(motorOne, HIGH);
+      delay(MotorFillTime);
+      digitalWrite(motorOne, LOW);
     }
   
     uint8_t Execute()
     {
-      Serial.println("Execute Sink State");
-      digitalWrite(motorOne, HIGH);
-      delay(MotorFillTime);
-      digitalWrite(motorOne, LOW);
       return SUBMERGED_STATE;
     }
 };
+
 class Submerged_State:public State
 {
   private:
@@ -113,43 +99,41 @@ class Submerged_State:public State
     }
     uint8_t Execute()
     {
-      delay(5000);
+      delay(SinkLength);
       return COLLECT_STATE;
     }
 };
+
 class Collect_State:public State
 {
   private:
     void Enter()
     {
       Serial.println("Enter Collect State");
+      // READ SENSOR DATA***********************************************
     }
     uint8_t Execute()
-    {
-      delay(SinkLength);
-      Serial.println(SinkLength);
-      // READ SENSOR DATA***********************************************
+    {     
       return RISE_STATE;
     }
 };
+
 class Rise_State:public State
 {
   private:
     void Enter()
     {
       Serial.println("Enter Rise State");
-    }
-  
-    uint8_t Execute()
-    {
-      Serial.println("Execute Rise State");
       digitalWrite(motorTwo, HIGH);
       delay(MotorFillTime);
       digitalWrite(motorTwo, LOW);
+    }
+  
+    uint8_t Execute()
+    {     
       return FLOAT_STATE;
     }
 };
-
 
 State* state_array[NUMBER_OF_STATES];
 State* current_state;
@@ -197,8 +181,6 @@ void Set_State(uint8_t state)
     current_state->Enter();
 }
 
-
-
 float Get_Battery_Voltage()
 {
     int battery_analog_reading = analogRead(BATTERY_PIN);
@@ -217,7 +199,7 @@ void Check_For_Low_Battery()
        if(voltage < MOTOR_CUTOFF_VOLTAGE)
        {
           is_battery_low = true;
-          if(current_state != state_array[RISE_STATE])
+          if(current_state != state_array[RISE_STATE] || current_state != state_array[FLOAT_STATE])
           {
               Set_State(RISE_STATE);
           }
