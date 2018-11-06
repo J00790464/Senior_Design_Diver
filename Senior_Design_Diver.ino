@@ -34,7 +34,7 @@ SoftwareSerial soft_serial(2,3);
 
 //Valve servo object and pin
 Servo valve_servo;
-#define servo_pin = 10;
+#define servo_pin 10
 
 //User input sink timer in ms
 unsigned int SinkLength;
@@ -77,7 +77,6 @@ class Float_State: public State
     uint8_t Execute()
     {     
       String command = Get_Bt_Command();
-<<<<<<< HEAD
       Serial.println(command);
  
       if (command == "Dive" || command == "DiveDive" || command == "Dive\r\n") {
@@ -88,7 +87,8 @@ class Float_State: public State
             timer = Get_Bt_Command();
             Serial.println(timer);
             delay(25);
-=======
+          }
+      }
       //Serial.println(command);
       if (command == "Dive" || command == "DiveDive" || command == "Dive\r\n") 
       {
@@ -97,7 +97,6 @@ class Float_State: public State
           while (timer.toInt() == 0)
           {
             timer = Get_Bt_Command();
->>>>>>> 16ebfaefea0584f95f0db5b55c32b559bb93f364
           }
           SinkLength = timer.toInt();          
           return SINK_STATE;
