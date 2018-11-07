@@ -33,7 +33,6 @@ Servo valve_servo;
 
 //User input sink timer in ms
 unsigned int SinkLength;
-
 //Base class for states
 class State
 {
