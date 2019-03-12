@@ -34,7 +34,7 @@ SoftwareSerial soft_serial(2,3);
 
 //Valve servo object and pin
 Servo valve_servo;
-#define servo_pin = 10;
+#define servo_pin 10
 
 //User input sink timer in ms
 unsigned int SinkLength;
@@ -80,13 +80,16 @@ class Float_State: public State
       //Serial.println(command);
       if (command == "Dive" || command == "DiveDive" || command == "Dive\r\n") 
       {
-          soft_serial.println("Enter length of time to dive: ");
-          String timer = Get_Bt_Command();
-          while (timer.toInt() == 0)
-          {
-            timer = Get_Bt_Command();
+          soft_serial.println("Enter length of time in seconds to dive: ");
+          int timer = Get_Bt_Command().toInt();          
+          while (timer == 0)
+          {            
+            timer = Get_Bt_Command().toInt();
           }
-          SinkLength = timer.toInt();          
+          soft_serial.print("Diving for ");
+          soft_serial.print(timer);
+          soft_serial.println(" seconds");
+          SinkLength = timer * 1000;          
           return SINK_STATE;
       }
       return REMAIN;
@@ -199,6 +202,8 @@ void setup() {
   valve_servo.write(90);
    
   delay(100);
+
+  soft_serial.println("Starting up");
 }
 
 void loop() { 
